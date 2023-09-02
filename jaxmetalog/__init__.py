@@ -29,15 +29,15 @@ class _BaseMetalog(object):
     def __init__(
         self,
         z: Callable[[NPArrayLike], NPArrayLike],
-        M: Callable[[Array, Array], float],
-        m: Callable[[Array, Array], float],
+        M: Callable[[Array, Array], Array],
+        m: Callable[[Array, Array], Array],
         learning_rate: float = 0.1,
         number_of_iterations: int = 200
     ) -> None:
         self._weights = None
         self.z = z
-        self.M = _M_k
-        self.m = _m_k
+        self.M = M
+        self.m = m
         self._lr = learning_rate
         self._n_iter = number_of_iterations
 
@@ -78,6 +78,7 @@ class _BaseMetalog(object):
         if self._weights is None:
             raise UnboundLocalError('Call fit first')
 
+        data = self.z(np.asanyarray(data))
         ecdf = ECDF(data)
         y = jnp.array(ecdf.y[1:-1])
         return self.m(y, self._weights)
@@ -89,6 +90,7 @@ class _BaseMetalog(object):
         if self._weights is None:
             raise UnboundLocalError('Call fit first')
 
+        data = self.z(np.asanyarray(data))
         ecdf = ECDF(data)
         y = jnp.array(ecdf.y[1:-1])
         return self.M(y, self._weights), y
@@ -101,10 +103,10 @@ class Metalog(_BaseMetalog):
         learning_rate: float = 0.1,
         number_of_iterations: int = 200
     ) -> None:
-        def M(y: Array, weights: Array) -> float:
+        def M(y: Array, weights: Array) -> Array:
             return _M_k(y, weights)
 
-        def m(y: Array, weights: Array) -> float:
+        def m(y: Array, weights: Array) -> Array:
             return _m_k(y, weights)
 
         super().__init__(
@@ -123,12 +125,12 @@ class LogMetalog(_BaseMetalog):
     ) -> None:
         self._b_lower = b_lower
 
-        def M(y: Array, weights: Array) -> float:
-            e = float(jnp.exp(_M_k(y, weights)))
+        def M(y: Array, weights: Array) -> Array:
+            e = jnp.exp(_M_k(y, weights))
             return self._b_lower + e
 
-        def m(y: Array, weights: Array) -> float:
-            e = float(jnp.exp(-1.0 * _M_k(y, weights)))
+        def m(y: Array, weights: Array) -> Array:
+            e = jnp.exp(-1.0 * _M_k(y, weights))
             return _m_k(y, weights) * e
 
         def z(data: NPArrayLike) -> NPArrayLike:
@@ -150,12 +152,12 @@ class NegativeLogMetalog(_BaseMetalog):
     ) -> None:
         self._b_upper = b_upper
 
-        def M(y: Array, weights: Array) -> float:
-            e = float(jnp.exp(-1.0 * _M_k(y, weights)))
+        def M(y: Array, weights: Array) -> Array:
+            e = jnp.exp(-1.0 * _M_k(y, weights))
             return self._b_upper - e
 
-        def m(y: Array, weights: Array) -> float:
-            e = float(jnp.exp(_M_k(y, weights)))
+        def m(y: Array, weights: Array) -> Array:
+            e = jnp.exp(_M_k(y, weights))
             return _m_k(y, weights) * e
 
         def z(data: NPArrayLike) -> NPArrayLike:
@@ -179,14 +181,14 @@ class LogitMetalog(_BaseMetalog):
         self._b_lower = b_lower
         self._b_upper = b_upper
 
-        def M(y: Array, weights: Array) -> float:
-            e = float(jnp.exp(_M_k(y, weights)))
+        def M(y: Array, weights: Array) -> Array:
+            e = jnp.exp(_M_k(y, weights))
             num = self._b_lower + self._b_upper * e
             den = 1.0 + e
             return num / den
 
-        def m(y: Array, weights: Array) -> float:
-            e = float(jnp.exp(_M_k(y, weights)))
+        def m(y: Array, weights: Array) -> Array:
+            e = jnp.exp(_M_k(y, weights))
 
             num = (1.0 + e) ** 2
             den = (self._b_upper - self._b_lower) * e
