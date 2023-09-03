@@ -10,14 +10,14 @@ def M_k(y, weights):
     l = jnp.log(y / (1 - y))  # noqa: E741
     d = (y - 0.5)
 
-    rv = weights[0] + weights[1] * l + weights[2] * d * l + weights[3] * d
+    rv = weights[0] + weights[1] * l + weights[2] * d * l + weights[3] * d  # noqa: E501
 
     def loop_body(i, rv):
         k = i + 1
         return jax.lax.cond(
             k % 2 != 0,
-            lambda: rv + weights[i] * jnp.power(d, (k - 1) / 2),
-            lambda: rv + weights[i] * jnp.power(d, -1 + k / 2) * l
+            lambda: rv + weights[i] * jnp.power(d, (k - 1) / 2),  # noqa: E501
+            lambda: rv + weights[i] * jnp.power(d, -1 + k / 2) * l  # noqa: E501
         )
 
     return jax.lax.fori_loop(
@@ -32,7 +32,7 @@ def m_k(y, weights):
     p = y * (1 - y)
 
     rv = jnp.power(
-        (weights[1] / p) + (weights[2] * ((d / p) + l)) + weights[3], -1.0
+        (weights[1] / p) + (weights[2] * ((d / p) + l)) + weights[3], -1.0  # noqa: E501
     )
 
     def loop_body(i, rv):
@@ -40,7 +40,7 @@ def m_k(y, weights):
         rv = jax.lax.cond(
             k % 2 != 0,
             lambda: (1.0 / rv) + weights[i] * 0.5 * (k - 1) * jnp.power(d, (k - 3) / 2),  # noqa: E501
-            lambda: (1.0 / rv) + weights[i] * ((jnp.power(d, -1 + k / 2) / p) + (-1 + k / 2) * jnp.power(d, -2 + k / 2) * l)  # noqa: E501
+            lambda: (1.0 / rv) + weights[i] * ((jnp.power(d, -1 + k / 2) / p) + (-1 + k / 2) * jnp.power(d, -2 + k / 2) * l)  # noqa: E501,E741
         )
         return jnp.power(rv, -1.0)
 
@@ -75,10 +75,10 @@ def gd(x, y, w_init, lr, n_iter):
     )
 
 
-def fit(x, y, lr=0.1, n_iter=200):
+def fit(x, y, lr=0.1, n_iter=200, k_min=5, k_max=20):
     best = jnp.inf
     rv = None
-    for k in range(5, 20):
+    for k in range(k_min, k_max):
         w_init = jnp.ones(k)
         w = gd(x, y, w_init, lr, n_iter)
         score = bic(w, y)

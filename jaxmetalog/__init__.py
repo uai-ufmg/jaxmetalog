@@ -103,14 +103,8 @@ class Metalog(_BaseMetalog):
         learning_rate: float = 0.1,
         number_of_iterations: int = 200
     ) -> None:
-        def M(y: Array, weights: Array) -> Array:
-            return _M_k(y, weights)
-
-        def m(y: Array, weights: Array) -> Array:
-            return _m_k(y, weights)
-
         super().__init__(
-            lambda x: x, M, m,
+            lambda x: x, _M_k, _m_k,
             learning_rate, number_of_iterations
         )
 
