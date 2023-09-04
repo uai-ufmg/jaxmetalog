@@ -53,7 +53,9 @@ class _BaseMetalog(object):
         # From here, everything is JAX
         x = jnp.array(ecdf.x[1:-1])
         y = jnp.array(ecdf.y[1:-1])
-        self._weights = _fit(x, y, self._lr, self._n_iter)
+        self._weights = _fit(
+            x, y, self.m, self._lr, self._n_iter
+        )
 
         if self._weights is None:
             raise AttributeError(

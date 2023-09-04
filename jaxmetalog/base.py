@@ -55,19 +55,11 @@ def mse(weights, x, y):
     return jnp.power(x - x_hat, 2).mean()
 
 
-@jax.jit
-def bic(weights, y):
-    k = weights.shape[0]
-    n = y.shape[0]
-    return k * jnp.log(n) + \
-        -2 * jnp.log(m_k(y, weights)).sum()
-
-
 dmse = jax.grad(mse)
 
 
 @jax.jit
-def gd(x, y, w_init, lr, n_iter):
+def gd(w_init, x, y, lr, n_iter):
     return jax.lax.fori_loop(
         0, n_iter,
         lambda _, w: w - lr * dmse(w, x, y),
@@ -75,13 +67,20 @@ def gd(x, y, w_init, lr, n_iter):
     )
 
 
-def fit(x, y, lr=0.1, n_iter=200, k_min=5, k_max=20):
+def bic(weights, y, m):
+    k = weights.shape[0]
+    n = y.shape[0]
+    return k * jnp.log(n) + \
+        -2 * jnp.log(m(y, weights)).sum()
+
+
+def fit(x, y, m, lr=0.1, n_iter=200, k_min=5, k_max=20):
     best = jnp.inf
     rv = None
     for k in range(k_min, k_max):
         w_init = jnp.ones(k)
-        w = gd(x, y, w_init, lr, n_iter)
-        score = bic(w, y)
+        w = gd(w_init, x, y, lr, n_iter)
+        score = bic(w, y, m)
         if score < best:
             rv = w
             best = score
