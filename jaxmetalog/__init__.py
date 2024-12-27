@@ -21,7 +21,7 @@ import jax.numpy as jnp
 import numpy as np
 
 
-KeyArray = Array | jax.random.PRNGKeyArray
+KeyArray = Array
 
 
 class _BaseMetalog(object):
